@@ -12,6 +12,11 @@ description = "Conditionally rewrite VCF genotypes — Rust port of bcftools +se
 name = "rsomics-vcf-setgt"
 path = "src/main.rs"
 
+
+[lib]
+name = "rsomics_vcf_setgt"
+path = "src/lib.rs"
+doctest = false
 [dependencies]
 rsomics-common = { version = "0.6" }
 rsomics-help = { version = "0.3" }
