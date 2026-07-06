@@ -569,13 +569,13 @@ dependencies = [
 
 [[package]]
 name = "rsomics-vcf-expr"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0203150b33489f560636d219d993aa9f427821213bfcdb6fe77eb7053298f57c"
+checksum = "478928c2060d417f3ba143e2ca65ee14ccb7ea467eac58737edb5403e741ed36"
 
 [[package]]
 name = "rsomics-vcf-setgt"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "clap",
  "criterion",

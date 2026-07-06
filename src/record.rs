@@ -32,7 +32,9 @@ pub fn rewrite_record_into(
     }
 
     let format_start = tab_positions[7] + 1;
-    let format_end = if n_tabs >= 8 {
+    // A sample column exists only when a 9th tab follows FORMAT; with a FORMAT
+    // column but zero samples, FORMAT runs to end of line and there is no GT to set.
+    let format_end = if n_tabs >= 9 {
         tab_positions[8]
     } else {
         bytes.len()
@@ -149,6 +151,24 @@ mod tests {
         let line = "chr1\t100\t.\tA\tT\t.\t.\t.";
         let mut out = String::new();
         rewrite_record_into(line, Target::All, &NewGt::Missing, &mut out, None);
+        assert_eq!(out, line);
+    }
+
+    #[test]
+    fn format_column_zero_samples_passthrough() {
+        // A FORMAT column with GT but no sample columns (9 cols, 8 tabs) has no GT
+        // to set; it must pass through unchanged rather than panic on an inverted range.
+        let line = "chr1\t100\t.\tA\tT\t.\t.\t.\tGT";
+        let mut out = String::new();
+        rewrite_record_into(line, Target::All, &NewGt::Ref, &mut out, None);
+        assert_eq!(out, line);
+    }
+
+    #[test]
+    fn sites_only_passthrough() {
+        let line = "chr1\t100\t.\tA\tT\t.\t.\t.";
+        let mut out = String::new();
+        rewrite_record_into(line, Target::All, &NewGt::Ref, &mut out, None);
         assert_eq!(out, line);
     }
 

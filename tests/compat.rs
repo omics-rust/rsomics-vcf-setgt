@@ -265,3 +265,75 @@ fn compat_query_include_gq_lt20_to_homref() {
     }
     check_query_case("-i", "FMT/GQ<20", "c:0/0");
 }
+
+// ── degenerate-input regression tests ─────────────────────────────────────────
+
+fn sites_only_fixture() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden/sites_only.vcf")
+}
+
+fn fmt_zero_sample_fixture() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden/fmt_zero_sample.vcf")
+}
+
+// A sites-only VCF (no FORMAT) has no GT to set; bcftools leaves it unchanged and
+// so must we — byte-identical.
+#[test]
+fn compat_sites_only_passthrough() {
+    if skip_if_unavailable() {
+        return;
+    }
+    let input = sites_only_fixture();
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let bc_out = tmp.path().join("bc.vcf");
+    let our_out = tmp.path().join("ours.vcf");
+
+    assert!(
+        run_bcftools(&input, &bc_out, "a", "."),
+        "bcftools +setGT failed on sites-only input"
+    );
+    run_ours(&input, &our_out, "a", ".");
+
+    let bc_lines = data_lines(&bc_out);
+    let our_lines = data_lines(&our_out);
+    assert_eq!(
+        bc_lines, our_lines,
+        "sites-only output differs from bcftools"
+    );
+}
+
+// A FORMAT column with zero sample columns is a degenerate record with no GT to set.
+// bcftools rejects such a header outright; our streaming parser must pass it through
+// without panicking on an inverted byte range. No bcftools comparison — regression
+// guard against the record.rs:40 panic.
+#[test]
+fn fmt_zero_sample_no_panic() {
+    let input = fmt_zero_sample_fixture();
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let our_out = tmp.path().join("ours.vcf");
+
+    let bin = env!("CARGO_BIN_EXE_rsomics-vcf-setgt");
+    let status = std::process::Command::new(bin)
+        .args([
+            input.to_str().unwrap(),
+            "--target",
+            "a",
+            "-n",
+            ".",
+            "-o",
+            our_out.to_str().unwrap(),
+        ])
+        .status()
+        .expect("failed to run rsomics-vcf-setgt");
+    assert!(
+        status.success(),
+        "rsomics-vcf-setgt must not panic/abort on a FORMAT-with-zero-samples record"
+    );
+
+    let input_data = data_lines(&input);
+    let our_data = data_lines(&our_out);
+    assert_eq!(
+        input_data, our_data,
+        "FORMAT-zero-sample record must pass through unchanged"
+    );
+}
