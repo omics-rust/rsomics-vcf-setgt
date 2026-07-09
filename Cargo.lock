@@ -575,7 +575,7 @@ checksum = "478928c2060d417f3ba143e2ca65ee14ccb7ea467eac58737edb5403e741ed36"
 
 [[package]]
 name = "rsomics-vcf-setgt"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clap",
  "criterion",
